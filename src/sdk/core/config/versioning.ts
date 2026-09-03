@@ -1,21 +1,32 @@
 /**
- * إصدارات الـSDK — PHASE 31 · قسم 64.
+ * إصدارات الـSDK — PHASE 31 أساس · PHASE 32 تطوير (أقسام 09 · 10 · 11).
  * ثلاثة أرقام مستقلة: إصدار الحزمة، إصدار الواجهة، وإصدار العقود.
- * التنفيذ المتقدم (Deprecation · Migration · Compatibility Matrix) في
- * PHASE 32 — SDK CONTRACTS & VERSIONING. هنا نضع الأساس فقط.
+ *
+ * PHASE 32 جعلت مصدر الحقيقة الموحّد في طبقة العقود (@/contracts/core):
+ *  • SDK_VERSION و API_VERSION يُعاد تصديرهما من هناك (مصدر واحد — قسم 09).
+ *  • نسخ المجالات المستقلة تعيش في DOMAIN_CONTRACT_VERSIONS (قسم 10).
+ *  • نظام الإهمال/الترحيل/التوافق الكامل يأتي من طبقة العقود.
+ * هذا الملف يبقى نقطة الاستيراد القديمة نفسها (توافق خلفي بلا كسر — قسم 83).
  */
+// نستورد مصدر الحقيقة الموحّد من طبقة العقود (الاتجاه: SDK → Contracts).
+import {
+  API_VERSION as CONTRACTS_API_VERSION,
+  CONTRACTS_VERSION,
+  SDK_PHASE as CONTRACTS_SDK_PHASE,
+  SDK_VERSION as CONTRACTS_SDK_VERSION,
+} from '@/contracts/core';
 
-// إصدار حزمة الـSDK نفسها (Semantic Versioning).
-export const SDK_VERSION = '1.0.0' as const;
+// إصدار حزمة الـSDK نفسها (مصدره الموحّد طبقة العقود — قسم 09).
+export const SDK_VERSION = CONTRACTS_SDK_VERSION;
 
 // إصدار واجهة الاستدعاء العلنية (يتغيّر عند تغيير توقيع علني).
-export const API_VERSION = 'v1' as const;
+export const API_VERSION = CONTRACTS_API_VERSION;
 
-// إصدار عقود المجال (يتغيّر عند تغيير شكل كيان أو أمر أو استعلام).
-export const CONTRACT_VERSION = '2026.09.1' as const;
+// إصدار عقود المجال الكلي (مظلة فوق نسخ المجالات المستقلة — قسم 10).
+export const CONTRACT_VERSION = CONTRACTS_VERSION;
 
-// رقم المرحلة التي أنشأت هذه الطبقة (توثيق تاريخي داخل الشيفرة).
-export const SDK_PHASE = 31 as const;
+// رقم المرحلة الحالية (توثيق تاريخي داخل الشيفرة).
+export const SDK_PHASE = CONTRACTS_SDK_PHASE;
 
 // بنية رقم إصدار دلالي مفكوك.
 export interface SemanticVersion {

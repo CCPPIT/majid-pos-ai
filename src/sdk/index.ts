@@ -18,6 +18,34 @@ export {
   type SDKProviders,
 } from './client/majid-sdk';
 
+// ── طبقة العقود المُنسَّخة — PHASE 32 ──
+export { createSDKContracts, type SDKContracts, type SDKContractVersionInfo } from './contracts';
+
+// ── العقود الموحّدة (إطار-محايدة) — PHASE 32 ──
+// نُصدّر النواة الأكثر استخدامًا فقط للحفاظ على سطح API صغير (قسم 73).
+// ملاحظة: SDK_VERSION يُصدَّر أصلًا عبر './core' فلا نكرّره هنا.
+export {
+  DOMAIN_CONTRACT_VERSIONS,
+  contractRegistry,
+  deprecationRegistry,
+  validateContract,
+  validateAIOutput,
+  migrateContract,
+  diffContracts,
+  assertVersionPolicy,
+  createOfflineCommand,
+  buildEvent,
+  checkCompatibility,
+  ERROR_CODES,
+  CAPABILITIES,
+  type ContractResult,
+  type ContractMetadata,
+  type VersionedDomainEvent,
+  type OfflineCommandEnvelope,
+} from '@/contracts/core';
+// تسجيل كل العقود يأتي من سجلّ الطبقة (ليس من النواة).
+export { registerAllContracts } from '@/contracts/registry';
+
 // ── المجالات ──
 export * from './rbac';
 export * from './tenancy';
