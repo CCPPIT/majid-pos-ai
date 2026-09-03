@@ -203,3 +203,12 @@ export {
   type ContractValidationError,
   type ContractValidationIssue,
 } from './validation/contract-validation';
+
+// ── فصل DTO الإصدارات — قسم 38 ──
+export {
+  DtoVersionAdapter,
+  apiDtoSchema,
+  parseAndAdaptDto,
+  type ApiDTO,
+  type ApiDtoVersion,
+} from './dto/dto-versioning';

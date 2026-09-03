@@ -30,8 +30,12 @@ import {
   buildEvent,
   transitionOfflineCommand,
   CapabilityRegistry,
+  DtoVersionAdapter,
+  apiDtoSchema,
+  parseAndAdaptDto,
   type ContractShape,
 } from '@/contracts';
+import { z } from 'zod';
 import { migrateSaleV1ToV2, SALE_V1, SALE_V2, saleV1Schema, saleV2Schema } from '@/contracts/sales/sale.contract';
 import { aiAssistantOutputSchema } from '@/contracts/ai/ai.contract';
 import { paymentSchema } from '@/contracts/payments/payment.contract';
@@ -381,7 +385,44 @@ describe('PHASE 32 — Capability Discovery', () => {
   });
 });
 
-// ── 11 · سيناريو المستهلك (قسم 77) — التفريع على أكواد الأخطاء ──
+// ── 11 · فصل DTO الإصدارات (قسم 38) ──
+describe('PHASE 32 — DTO Version Adapters (§38)', () => {
+  it('يحوّل DTO خامًا من أي نسخة API إلى عقد الـSDK الحالي', () => {
+    // شكل عقد الفاتورة الداخلي الهدف (SDK contract).
+    type InternalSale = { id: string; total: { amount: number; currency: string } };
+    // محوّل الفاتورة: يقبل خرائط v1 (totalAmount) وv2 (total).
+    const adapter = new DtoVersionAdapter<InternalSale>();
+    adapter.register('v1', (raw) => {
+      const p = raw as { id: string; totalAmount: number; currency: string };
+      return { id: p.id, total: { amount: p.totalAmount, currency: p.currency } };
+    });
+    adapter.register('v2', (raw) => {
+      const p = raw as { id: string; total: { amount: number; currency: string } };
+      return { id: p.id, total: p.total };
+    });
+    // مخطط حمولة فضفاض للحدود (التحقق التفصيلي في العقد الداخلي).
+    const payloadSchema = z.object({ id: z.string() }).passthrough();
+    // DTO من API v1.
+    const v1Dto = { apiVersion: 'v1', contractVersion: '1.0.0', requestId: 'r1', payload: { id: 's1', totalAmount: 100, currency: 'YER' } };
+    const fromV1 = parseAndAdaptDto(v1Dto, payloadSchema, adapter);
+    expect(fromV1.success).toBe(true);
+    if (fromV1.success) expect(fromV1.data.total.amount).toBe(100);
+    // DTO من API v2.
+    const v2Dto = { apiVersion: 'v2', contractVersion: '2.0.0', requestId: 'r2', payload: { id: 's1', total: { amount: 200, currency: 'YER' } } };
+    const fromV2 = parseAndAdaptDto(v2Dto, payloadSchema, adapter);
+    expect(fromV2.success).toBe(true);
+    if (fromV2.success) expect(fromV2.data.total.amount).toBe(200);
+    // نسخة API بلا محوّل تُرفض (لا استهلاك أعمى).
+    const v9 = { apiVersion: 'v9', contractVersion: '9.0.0', requestId: 'r3', payload: { id: 's1' } };
+    const fromV9 = parseAndAdaptDto(v9, payloadSchema, adapter);
+    expect(fromV9.success).toBe(false);
+    // غلاف غير صالح (requestId مفقود) يُرفض عند الحدود.
+    const bad = { apiVersion: 'v1', contractVersion: '1.0.0', payload: { id: 's1' } };
+    expect(validateContract(apiDtoSchema(payloadSchema), bad).success).toBe(false);
+  });
+});
+
+// ── 12 · سيناريو المستهلك (قسم 77) — التفريع على أكواد الأخطاء ──
 describe('PHASE 32 — Consumer Error Switch (§77)', () => {
   it('يتفرّع المستهلك على error.code الثابت لا الرسالة (قسم 30)', () => {
     const decisions: string[] = [];
