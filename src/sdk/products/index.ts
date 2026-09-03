@@ -41,9 +41,9 @@ export {
   skuSchema,
   priceAmountSchema,
   quantitySchema,
-  validateWith,
-  toValidationError,
 } from './contracts/product-schemas';
+// ملاحظة PHASE 32: validateWith/toValidationError مملوكان للنواة (@/sdk/core)
+// ويُصدَّران من حاجزها الوحيد؛ إزالتهما من هنا يمنع ازدواج التصدير (مصدر واحد).
 
 // المحوّلات (DTO ⇄ Domain ⇄ Legacy).
 export {

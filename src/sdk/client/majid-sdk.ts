@@ -37,6 +37,9 @@ import { createAIService, type AIProviderPort, type AIService } from '@/sdk/ai';
 import { createAuthService, type AuthService } from '@/sdk/auth';
 import { type AnalyticsTrackerPort, noopTracker } from '@/sdk/analytics';
 import type { NotificationProviderPort } from '@/sdk/notifications';
+// PHASE 32: واجهة العقود المُنسَّخة (سجلّ/توافق/ترحيل/قدرات).
+import { createSDKContracts, type SDKContracts } from '@/sdk/contracts';
+import { CAPABILITIES, type CapabilityName } from '@/contracts/core';
 
 // المستودعات المطلوبة لتشغيل الـSDK (كلها واجهات).
 export interface SDKRepositories {
@@ -87,6 +90,8 @@ export interface MajidSDK {
   readonly pos: PosService; // نقطة البيع.
   readonly ai?: AIService; // الذكاء (متى وُجد مزوّده).
   readonly analytics: AnalyticsTrackerPort; // تتبّع الاستخدام.
+  readonly contracts: SDKContracts; // طبقة العقود المُنسَّخة (PHASE 32).
+  readonly capabilities: SDKContracts['capabilities']; // اكتشاف القدرات (قسم 64).
   // ينهي الجلسة ويمسح كل الحالة الداخلية.
   dispose(): void;
 }
@@ -197,12 +202,32 @@ export const createMajidSDK = (options: CreateMajidSDKOptions): MajidSDK => {
     ? createAIService({ provider: options.providers.ai, rbac, contextStore, audit, clock })
     : undefined;
 
-  // (13) الـSDK المُركَّب.
+  // (13) طبقة العقود المُنسَّخة — PHASE 32 (سجلّ/توافق/ترحيل/قدرات).
+  // نحسب القدرات المتاحة فعلًا بناءً على المزوّدين المُحقنين.
+  const availableCapabilities: CapabilityName[] = [
+    CAPABILITIES.POS,
+    CAPABILITIES.INVENTORY,
+    CAPABILITIES.PAYMENTS,
+    CAPABILITIES.FINANCE,
+    CAPABILITIES.PROCUREMENT,
+    CAPABILITIES.HR,
+    CAPABILITIES.ANALYTICS,
+    CAPABILITIES.OFFLINE,
+    // الذكاء متاح فقط عند حقن مزوّده.
+    ...(options.providers?.ai ? [CAPABILITIES.AI as CapabilityName] : []),
+    // الإشعارات متاحة عند حقن مزوّدها.
+    ...(options.providers?.notifications ? [CAPABILITIES.NOTIFICATIONS as CapabilityName] : []),
+  ];
+  const contracts = createSDKContracts({ availableCapabilities });
+
+  // (14) الـSDK المُركَّب.
   return {
     version: SDK_VERSION,
     apiVersion: API_VERSION,
     contractVersion: CONTRACT_VERSION,
     context: contextStore,
+    contracts,
+    capabilities: contracts.capabilities,
     auth,
     rbac,
     tenancy,
